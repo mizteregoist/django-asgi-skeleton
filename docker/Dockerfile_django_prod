@@ -1,0 +1,46 @@
+# pull official base image
+FROM python:3.9.2
+
+# set environment varibles
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV USER docker
+ENV HOME /home/app
+ENV PATH $PATH:$HOME/.local/bin
+
+COPY /docker/docker_entrypoint_prod.sh /docker_entrypoint.sh
+RUN chmod +x /docker_entrypoint.sh
+
+# create the app user
+RUN adduser --disabled-password --home $HOME --gecos "production version, app" $USER
+RUN usermod -u 1000 $USER && groupmod -g 1000 $USER
+
+# set work directory
+WORKDIR $HOME
+
+# install psycopg2 dependencies
+RUN apt-get update && apt-get install -y  \
+    apt-utils \
+    cron \
+    curl \
+    wget \
+    git \
+    unzip \
+    gcc  \
+    musl-dev
+
+# install dependencies
+RUN pip install --upgrade pip
+RUN runuser -u $USER -- pip install -U pipenv
+COPY --chown=$USER:$USER /app/Pipfile $HOME/Pipfile
+COPY --chown=$USER:$USER /app/Pipfile.lock $HOME/Pipfile.lock
+RUN runuser -u $USER -- pipenv install --python 3.9 --deploy --system
+
+# copy project
+COPY --chown=$USER:$USER /app $HOME
+
+EXPOSE 8000
+
+ENTRYPOINT ["/docker_entrypoint.sh"]

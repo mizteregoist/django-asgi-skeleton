@@ -1,0 +1,43 @@
+version: '3.3'
+
+services:
+  local-nginx:
+    restart: always
+    build:
+      context: ./
+      dockerfile: ./docker/Dockerfile_nginx_local
+    volumes:
+      - ./docker/logs/nginx:/var/log/nginx
+      - ./app:/home/app
+    ports:
+      - ${NGINX_PORT_HTTP_DEV}:80
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - NGINX_ENTRYPOINT_QUIET_LOGS=1
+      - TZ=Europe/Moscow
+    networks:
+      - local-django-backend
+    depends_on:
+      - local-app
+
+  local-app:
+    restart: always
+    build:
+      context: ./
+      dockerfile: docker/Dockerfile_django_local
+    volumes:
+      - ./app:/home/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - TZ=Europe/Moscow
+      - ENV=local
+    env_file:
+      - ./.env
+    networks:
+      - local-django-backend
+
+networks:
+  local-django-backend:
+    driver: bridge

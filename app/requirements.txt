@@ -1,0 +1,8 @@
+Django
+django-debug-toolbar
+django-bootstrap-v5
+psycopg2-binary
+twisted[tls,http2]
+daphne
+channels
+channels-redis

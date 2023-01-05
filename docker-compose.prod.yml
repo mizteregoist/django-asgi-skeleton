@@ -1,0 +1,77 @@
+version: '3.3'
+
+services:
+  prod-pgsql:
+    restart: always
+    image: postgres:12.7-alpine
+    volumes:
+      - prod-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${PGSQL_USER}
+      - POSTGRES_PASSWORD=${PGSQL_PASS}
+      - POSTGRES_DB=${PGSQL_NAME}
+      - TZ=Europe/Moscow
+    networks:
+      - prod-django-backend
+
+  prod-nginx:
+    restart: always
+    build:
+      context: ./
+      dockerfile: ./docker/Dockerfile_nginx_prod
+    volumes:
+      - prod-app-data:/home/app
+      - prod-static-data:/home/app/static
+      - prod-media-data:/home/app/media
+      - prod-nginx-logs:/var/log/nginx
+    ports:
+      - ${NGINX_PORT_HTTP}:80
+    environment:
+      - NGINX_ENTRYPOINT_QUIET_LOGS=1
+      - TZ=Europe/Moscow
+    networks:
+      - prod-django-backend
+    depends_on:
+      - prod-app
+
+  prod-redis:
+    restart: always
+    image: redis:7.0-rc-alpine
+    environment:
+      - TZ=Europe/Moscow
+    networks:
+      - prod-django-backend
+    depends_on:
+      - prod-app
+
+  prod-app:
+    restart: always
+    build:
+      context: ./
+      dockerfile: docker/Dockerfile_django_prod
+    volumes:
+      - prod-app-data:/home/app
+      - prod-static-data:/home/app/static
+      - prod-media-data:/home/app/media
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - PGSQL_USER=${PGSQL_USER}
+      - PGSQL_PASS=${PGSQL_PASS}
+      - PGSQL_NAME=${PGSQL_NAME}
+      - TZ=Europe/Moscow
+      - ENV=prod
+    networks:
+      - prod-django-backend
+    depends_on:
+      - prod-pgsql
+
+networks:
+  prod-django-backend:
+    driver: bridge
+
+volumes:
+  prod-db-data:
+  prod-app-data:
+  prod-static-data:
+  prod-media-data:
+  prod-nginx-logs:

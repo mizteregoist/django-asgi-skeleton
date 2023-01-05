@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru" class="h-100">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#712cf9">
+    <meta name="keywords" content="{% block keywords %}{% endblock %}">
+    <meta name="description" content="{% block description %}{% endblock %}">
+    {% load bootstrap5 %}
+    {% bootstrap_css %}
+    {% bootstrap_messages %}
+    {% block styles %}
+    {% endblock %}
+    <title>{% block title %}Sample{% endblock %}</title>
+</head>
+<body class="d-flex flex-column h-100">
+<header></header>
+<main role="main" class="flex-shrink-0">
+    <div class="container">
+        {% block content %}
+        {% endblock %}
+    </div>
+</main>
+<footer class="footer mt-auto py-3 text-muted">
+    <div class="container"></div>
+</footer>
+{% bootstrap_javascript %}
+{% block scripts %}
+{% endblock %}
+</body>
+</html>

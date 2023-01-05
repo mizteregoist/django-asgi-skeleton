@@ -1,0 +1,77 @@
+version: '3.3'
+
+services:
+  dev-pgsql:
+    restart: always
+    image: postgres:12.7-alpine
+    volumes:
+      - dev-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${PGSQL_USER}
+      - POSTGRES_PASSWORD=${PGSQL_PASS}
+      - POSTGRES_DB=${PGSQL_NAME}
+      - TZ=Europe/Moscow
+    networks:
+      - dev-django-backend
+
+  dev-nginx:
+    restart: always
+    build:
+      context: ./
+      dockerfile: ./docker/Dockerfile_nginx_dev
+    volumes:
+      - dev-app-data:/home/app
+      - dev-static-data:/home/app/static
+      - dev-media-data:/home/app/media
+      - dev-nginx-logs:/var/log/nginx
+    ports:
+      - ${NGINX_PORT_HTTP_DEV}:80
+    environment:
+      - NGINX_ENTRYPOINT_QUIET_LOGS=1
+      - TZ=Europe/Moscow
+    networks:
+      - dev-django-backend
+    depends_on:
+      - dev-app
+
+  dev-redis:
+    restart: always
+    image: redis:7.0-rc-alpine
+    environment:
+      - TZ=Europe/Moscow
+    networks:
+      - dev-django-backend
+    depends_on:
+      - dev-app
+
+  dev-app:
+    restart: always
+    build:
+      context: ./
+      dockerfile: docker/Dockerfile_django_dev
+    volumes:
+      - dev-app-data:/home/app
+      - dev-static-data:/home/app/static
+      - dev-media-data:/home/app/media
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - PGSQL_USER=${PGSQL_USER}
+      - PGSQL_PASS=${PGSQL_PASS}
+      - PGSQL_NAME=${PGSQL_NAME}
+      - TZ=Europe/Moscow
+      - ENV=dev
+    networks:
+      - dev-django-backend
+    depends_on:
+      - dev-pgsql
+
+networks:
+  dev-django-backend:
+    driver: bridge
+
+volumes:
+  dev-db-data:
+  dev-app-data:
+  dev-static-data:
+  dev-media-data:
+  dev-nginx-logs:
